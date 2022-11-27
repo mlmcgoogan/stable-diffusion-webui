@@ -18,6 +18,7 @@ from PIL import PngImagePlugin,Image
 from modules.sd_models import checkpoints_list
 from modules.realesrgan_model import get_realesrgan_models
 from typing import List
+import modules.scripts ### HACK ### For script injection hack
 
 def upscaler_to_index(name: str):
     try:
@@ -122,10 +123,18 @@ class Api:
         p = StableDiffusionProcessingTxt2Img(**vars(populate))
         # Override object param
 
+        ### SCRIPT INJECTION HACK ### Injecting scripts for API usage (dynamic prompts specifically here)
+        p.scripts = modules.scripts.scripts_txt2img
+        args = (0, '<div class="dynamic-prompting">\n    <h3><strong>Combinations</strong></h3>\n\n    Choose a number of terms from a list, in this case we choose two artists: \n    <code class="codeblock">{2$$artist1|artist2|artist3}</code><br/>\n\n    If $$ is not provided, then 1$$ is assumed.<br/><br/>\n\n    If the chosen number of terms is greater than the available terms, then some terms will be duplicated, otherwise chosen terms will be unique. This is useful in the case of wildcards, e.g.\n    <code class="codeblock">{2$$__artist__}</code> is equivalent to <code class="codeblock">{2$$__artist__|__artist__}</code><br/><br/>\n\n    A range can be provided:\n    <code class="codeblock">{1-3$$artist1|artist2|artist3}</code><br/>\n    In this case, a random number of artists between 1 and 3 is chosen.<br/><br/>\n\n    Wildcards can be used and the joiner can also be specified:\n    <code class="codeblock">{{1-$$and$$__adjective__}}</code><br/>\n\n    Here, a random number between 1 and 3 words from adjective.txt will be chosen and joined together with the word \'and\' instead of the default comma.\n\n    <br/><br/>\n\n    <h3><strong>Wildcards</strong></h3>\n    <p class="wildcard">__artist__</p><p class="wildcard">__style__</p>\n\n    <br/>\n    If the groups wont drop down click <strong onclick="check_collapsibles()" style="cursor: pointer">here</strong> to fix the issue.\n\n    <br/><br/>\n\n    <code class="codeblock">WILDCARD_DIR: /home/subpanic/stable-diffusion-webui/extensions/sd-dynamic-prompts/wildcards</code><br/>\n    <small onload="check_collapsibles()">You can add more wildcards by creating a text file with one term per line and name is mywildcards.txt. Place it in /home/subpanic/stable-diffusion-webui/extensions/sd-dynamic-prompts/wildcards. <code class="codeblock">__&#60;folder&#62;/mywildcards__</code> will then become available.</small>\n</div>\n\n', True, False, 1, False, False, False, 100, 0.7, False, False, False, False, False, False, False, False, False, '', 1, '', 0, '', True, False, False, '{inspiration}', None)
+        p.script_args = args
+        ### END SCRIPT INJECTION HACK ###
+
         shared.state.begin()
 
         with self.queue_lock:
-            processed = process_images(p)
+            processed = modules.scripts.scripts_txt2img.run(p, *args) ### HACK ### More script injection hack
+            if processed is None:
+                processed = process_images(p)
 
         shared.state.end()
 
