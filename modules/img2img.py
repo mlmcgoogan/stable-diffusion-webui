@@ -20,6 +20,9 @@ def process_batch(p, input_dir, output_dir, args):
     processing.fix_seed(p)
 
     images = shared.listfiles(input_dir)
+    
+    ### Only process image files with supported extensions
+    images = [imgFile for imgFile in images if imgFile.lower().endswith(('.png', '.jpg', '.jpeg'))]
 
     print(f"Will process {len(images)} images, creating {p.n_iter * p.batch_size} new images for each.")
 
