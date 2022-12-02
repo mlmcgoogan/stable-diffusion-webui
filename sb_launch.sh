@@ -1,3 +1,5 @@
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate auto1111
 export PYTHONUNBUFFERED=1
 SD_DEVICE=$1
 MODEL_PATH=$2
